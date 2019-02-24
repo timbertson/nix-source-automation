@@ -2,6 +2,8 @@
 
 Real life example: opam2nix-packages. This is a full set of opam packages, but isn't part of `nixpkgs`.
 
+Current state: users need to copy the whole `nix/release/` folder from a checkout which includes default.nix plus multiple JSON files in order to reference these pacakges. I used to embed them all in a single `release.nix` but that required templating to update 3 files in slightly different ways on every commit.
+
 Requirements:
 
  - Users should be able to opt in to a specific version with a simple oneline nix expression
