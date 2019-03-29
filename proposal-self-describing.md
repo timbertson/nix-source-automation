@@ -28,6 +28,13 @@ mkDerivation rec {
 }
 ```
 
+Basic flow:
+
+inputs = { version: 1234 };
+json="$(nix-impure "$(nix-prefetch-src '<nixpkgs>' -A myPkg.src.meta.update --argstr version "1.2.4")")"
+json['meta'] = { version = 1234; }
+nix-splice-expr --merge-arg-to 'fetchSrc' "$(cat json)" path/to/pkg.nix
+
 `fetch-latest` update using a local repo:
 ```
 		meta = {
