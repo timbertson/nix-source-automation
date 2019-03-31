@@ -1,0 +1,12 @@
+{ "nvr": { "api": "0.1" }
+, "sources":
+	{ "gup":
+		{ "source":
+			[ "fetchFromGithHub",
+				{ "repo": "gup", "owner": "timbertson", "rev": "master" } ]
+		, "ref": "master"
+		, "version": "1.2.3"
+		, "importPath": "nix/gup-python.nix"
+		}
+	}
+}
