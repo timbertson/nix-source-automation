@@ -1,10 +1,9 @@
-{ pkgs ? import <nixpkgs> {}}:
-with pkgs;
-rec {
-	nixImpure = callPackage ./nixImpure.nix {};
-	importDrv = callPackage ./importDrv.nix {};
-	exportLocalGit = callPackage ./exportLocalGit.nix { inherit nixImpure; };
-	overrideSrc = callPackage ./overrideSrc.nix { inherit importDrv; };
-	wrangle = callPackage ./wrangle.nix {inherit overrideSrc exportLocalGit unpackArchive;};
-	unpackArchive = callPackage ./unpackArchive.nix {};
+{ stdenv, callPackage }:
+stdenv.mkDerivation rec {
+	src = (callPackage ./api.nix {}).exportLocalGit { path = ../.; ref="HEAD"; unpack = true; };
+	name="nix-source-automation";
+	passthru = {
+		api = import "${src}/nix/api.nix";
+	};
+	buildCommand = "touch $out";
 }
