@@ -1,4 +1,4 @@
-{ bash, lib, stdenv, git, nixImpure ? (assert "workingChanges not supported without nixImpure"; null) }:
+{ bash, lib, stdenv, git, nixImpure ? (abort "workingChanges not supported without nixImpure") }:
 
 # Impure derivation which returns a .tgz or directory export of a git workspace.
 # If `workingChanges` is `true`, returns a nix-impure script which will

@@ -11,8 +11,8 @@ in
 	
 	importDrv = { drvPath }: importDrv drvPath;
 
-	exportGit = { commit ? null, ref ? null, unpack ? false, workingChanges ? false }:
-		exportGit { inherit commit ref unpack workingChanges; dir = ../.; };
+	exportLocalGit = { commit ? null, ref ? null, unpack ? false, workingChanges ? false }:
+		exportLocalGit { inherit commit ref unpack workingChanges; dir = ../.; };
 
 	gup = callPackage ./gup-readme.nix {};
 }

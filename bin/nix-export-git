@@ -38,7 +38,7 @@ def main():
 		+ to_nix('unpack', bool(opts.unpack))
 		+ to_nix('workingChanges', bool(opts.working_changes))
 		+ [
-		'-A', 'exportGit',
+		'-A', 'exportLocalGit',
 		'--show-trace',
 		os.path.join(here, '..', 'nix', 'default.nix'),
 	])

@@ -10,6 +10,7 @@ function run() {
 		echo -e "Ok: $1\n"
 	fi
 }
+run "unit.sh"
 run "callpackage.sh"
 run "import-drv-check-identity.sh"
 run "nix-impure.sh"
