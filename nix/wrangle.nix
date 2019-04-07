@@ -51,9 +51,6 @@ let
 
 		nodesOfJsonList = jsons:
 			lib.foldr (a: b: a // b) {} (map nodesOfJson jsons);
-
-		overlaysOfNodes = nodes:
-			map (node: node.overlay) (attrValues nodes);
 	};
 
 	api = with internals; rec {
@@ -95,6 +92,9 @@ let
 			basePath ? null,
 			paths ? null,
 		}: overlaysOfNodes (importFrom { inherit basePath paths; });
+
+		overlaysOfNodes = nodes:
+			map (node: node.overlay) (attrValues nodes);
 
 		pkgs = {
 			basePath ? null,

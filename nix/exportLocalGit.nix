@@ -4,7 +4,7 @@
 # If `workingChanges` is `true`, returns a nix-impure script which will
 # create the appropriate aritfact including changes to tracked files.
 
-{ path, commit ? null, ref ? null, workingChanges ? false, unpack ? false }:
+{ path, commit ? null, ref ? null, workingChanges ? false, unpack ? true }:
 	let
 		prefix = "#!${bash}/bin/bash\n" + ''
 			export PATH="${git}/bin:$PATH";
