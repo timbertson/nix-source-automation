@@ -1,12 +1,13 @@
 with import <nixpkgs> {};
 with builtins;
 with lib;
-with (callPackage ../nix/default.nix {}).wrangle;
+with (callPackage ../nix/api.nix {}).wrangle;
 with internals;
 let
 	eq = msg: a: b: [
 		"${msg}: ${toJSON a} != ${toJSON b}" (a == b)
 	];
+
 	versionSrc = {
 		source = ["github" {
 			"owner" = "timbertson";
@@ -15,6 +16,13 @@ let
 			"sha256" = "056l8m0xxl1h7x4fd1hf754w8q4sibpqnwgnbk5af5i66399az61";
 		}];
 		importPath = "nix/";
+	};
+
+	version = {
+		wrangle = { apiversion = 1; };
+		sources = {
+			version = versionSrc;
+		};
 	};
 
 	versionNoImport = {
@@ -46,17 +54,38 @@ let
 			{ foo = 1; bar = { baz = 1; }; })
 
 		["implPath is path" (isString (makeNode "name" versionSrc).importPath)]
+
 		["importPath defaults to default.nix" (hasSuffix "/default.nix" (makeNode "name" versionNoImport).importPath)]
+
 		["importPath is modifiable" (hasSuffix "/foo.nix" (makeNode "name" (versionSrc // {importPath = "foo.nix";})).importPath)]
+
 		["src is derivation" (isDerivation (makeNode "name" versionSrc).src)]
+
 		(eq "passthru name" (makeNode "name" versionSrc).name "name")
+
 		(eq "passthru attrs" (makeNode "name" versionSrc).attrs versionSrc)
+
 		["overlay is valid"
 			(isDerivation ((makeNode "pythonPackages.versionOverride" versionSrc).overlay
 				{inherit callPackage;} # self
 				{} # super
 			).pythonPackages.versionOverride)]
+
 		(eq "uses nixpkgs entry" (pkgs { paths = [ fakeNixpkgs ]; }) "fake nixpkgs!")
+
+		["makes derivations" (isDerivation (derivations { paths = [ version ]; }).version)]
+
+		(eq "allows overriding of callPackage" "injected" (derivations {
+			paths = [ version ];
+			extend = nodes: {
+				version = {
+					call = { pkgs, path }: ((pkgs.callPackage path {}).overrideAttrs (o: {
+						passthru = { extra = "injected"; };
+					}));
+				};
+			};
+		}).version.extra)
+
 	];
 	failures = concatMap (test:
 		if elemAt test 1 then [] else [(elemAt test 0)]

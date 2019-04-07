@@ -7,11 +7,6 @@ let
 	internals = with api; rec {
 		overlaysOfJson = json: overlaysOfNodes (nodesOfJson json);
 
-		importJsonSrc = path:
-			if isAttrs path
-				then warn "path is an attrset, this should only be used for testing" path
-				else builtins.trace "Importing ${path}" (importJSON path);
-
 		implAttrset = node: impl:
 		let
 			paths = map (splitString ".") (node.attrs.attrPaths or [node.name]);
@@ -29,25 +24,29 @@ let
 				;
 				src = if (attrs.unpack or false) then (unpackArchive fetched) else fetched;
 				importPath = "${src}/${attrs.importPath or "default.nix"}";
-				callWith = callPackage: args: overrideSrc {
+
+				defaultCall = { pkgs, path }: pkgs.callPackage path {};
+				callImpl = attrs.call or defaultCall;
+
+				callWith = args: overrideSrc {
 					inherit src;
-					drv = callPackage importPath args;
+					drv = callImpl args;
 					version = attrs.version or (fetchArgs.ref or null);
 				};
+				drv = callWith { pkgs = _nixpkgs; path = importPath; };
 				overlay = (self: super:
 					let
-						impl = callWith self.callPackage {};
+						impl = callWith { pkgs = self; path = importPath; };
 						addition = implAttrset node impl;
 					in
 					recursiveUpdateUntil (path: l: r: isDerivation l) super addition
 				);
-				node = { inherit name attrs src importPath overlay callWith; };
+				node = { inherit name attrs src importPath overlay drv; };
 			in
 			node
 		;
-		nodesOfJson = json:
-			assert json.wrangle.apiversion == 1;
-			mapAttrs makeNode json.sources;
+
+		nodesOfJson = mapAttrs makeNode;
 
 		nodesOfJsonList = jsons:
 			lib.foldr (a: b: a // b) {} (map nodesOfJson jsons);
@@ -64,34 +63,44 @@ let
 			path = ({ path }: path);
 		};
 
+		importJsonSrc = path:
+			let attrs = if isAttrs path
+				then path
+				else builtins.trace "Importing ${path}" (importJSON path);
+			in
+			assert attrs.wrangle.apiversion == 1; attrs.sources;
+
 		importFrom = {
 			basePath ? null,
 			paths ? null,
+			extend ? null,
 		}:
-		nodesOfJsonList (
-			if paths != null then paths else (
-				if basePath == null
-					then (abort "basePath or paths required")
-					else map importJsonSrc (
-						let
-							p = builtins.toString basePath;
-							candidates = [
-								"${p}/wrangle.json"
-								"${p}/wrangle-local.json"
-							];
-							present = filter builtins.pathExists candidates;
-						in
-						if (length present == 0)
-							then abort "No files found in candidates:\n - ${concatStringsSep "\n - " candidates}"
-							else present
-					)
-			)
-		);
-
-		overlays = {
-			basePath ? null,
-			paths ? null,
-		}: overlaysOfNodes (importFrom { inherit basePath paths; });
+		let
+			jsonList = map importJsonSrc (
+				if paths != null then paths else (
+					if basePath == null
+						then (abort "basePath or paths required")
+						else (
+							let
+								p = builtins.toString basePath;
+								candidates = [
+									"${p}/wrangle.json"
+									"${p}/wrangle-local.json"
+								];
+								present = filter builtins.pathExists candidates;
+							in
+							if (length present == 0)
+								then lib.warn "No files found in candidates:\n - ${concatStringsSep "\n - " candidates}" present
+								else present
+						)
+				)
+			);
+			jsonSources = lib.foldr (a: b: a // b) {} jsonList;
+			jsonExtended = if extend == null then jsonSources else (
+				recursiveUpdate jsonSources (extend jsonSources)
+			);
+		in
+		nodesOfJson jsonExtended;
 
 		overlaysOfNodes = nodes:
 			map (node: node.overlay) (attrValues nodes);
@@ -101,10 +110,11 @@ let
 			paths ? null,
 			nixpkgs ? null,
 			overlays ? [],
+			extend ? null,
 		}:
 		# TODO: any special treatment for wrangle itself?
 		let
-			nodes = importFrom { inherit basePath paths; };
+			nodes = importFrom { inherit basePath paths extend; };
 			nixpkgsPath =
 				if nixpkgs != null then nixpkgs else (
 					# if not specified use the "nixpkgs" entry,
@@ -118,10 +128,8 @@ let
 			overlays = overlays ++ (overlaysOfNodes nodes);
 		};
 
-		call = { basePath ? null, paths ? null, callPackage ? _nixpkgs.callPackage, name }: args:
-			let
-				nodes = importFrom { inherit basePath paths; };
-			in
-			(builtins.getAttr name nodes).callWith callPackage args;
+		overlays = args: overlaysOfNodes (importFrom args);
+
+		derivations = args: mapAttrs (name: node: node.drv) (importFrom args);
 	};
 in api
