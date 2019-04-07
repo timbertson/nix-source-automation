@@ -15,7 +15,7 @@ let
 			"rev" = "version-0.13.1";
 			"sha256" = "056l8m0xxl1h7x4fd1hf754w8q4sibpqnwgnbk5af5i66399az61";
 		}];
-		importPath = "nix/";
+		nix = "nix/";
 	};
 
 	version = {
@@ -39,7 +39,7 @@ let
 		sources = {
 			nixpkgs = {
 				source = [ "path" { path = (toString ./.); } ];
-				importPath = "fakeNixpkgs.nix";
+				nix = "fakeNixpkgs.nix";
 			};
 		};
 	};
@@ -53,11 +53,11 @@ let
 			(implAttrset { attrs = { attrPaths = ["foo" "bar.baz"]; }; } 1)
 			{ foo = 1; bar = { baz = 1; }; })
 
-		["implPath is path" (isString (makeNode "name" versionSrc).importPath)]
+		["implPath is path" (isString (makeNode "name" versionSrc).nix)]
 
-		["importPath defaults to default.nix" (hasSuffix "/default.nix" (makeNode "name" versionNoImport).importPath)]
+		["nix defaults to default.nix" (hasSuffix "/default.nix" (makeNode "name" versionNoImport).nix)]
 
-		["importPath is modifiable" (hasSuffix "/foo.nix" (makeNode "name" (versionSrc // {importPath = "foo.nix";})).importPath)]
+		["nix is modifiable" (hasSuffix "/foo.nix" (makeNode "name" (versionSrc // {nix = "foo.nix";})).nix)]
 
 		["src is derivation" (isDerivation (makeNode "name" versionSrc).src)]
 

@@ -4,5 +4,5 @@ with callPackage ../../nix {};
 (callPackage
 	(
 		wrangle.importFrom { basePath = ./.; }
-	).nix-source-automation.importPath {}
+	).nix-source-automation.nix {}
 ).wrangle.pkgs { basePath = ./.; }

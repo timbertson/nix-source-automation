@@ -11,7 +11,7 @@
 			]
 		, "ref": "master"
 		, "version": "1.2.3"
-		, "importPath": "nix/gup-python.nix"
+		, "nix": "nix/gup-python.nix"
 		}
 	}
 }

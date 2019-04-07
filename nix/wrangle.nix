@@ -23,7 +23,7 @@ let
 					else abort "Unknown fetcher: ${fetcher}"
 				;
 				src = if (attrs.unpack or false) then (unpackArchive fetched) else fetched;
-				importPath = "${src}/${attrs.importPath or "default.nix"}";
+				nix = "${src}/${attrs.nix or "default.nix"}";
 
 				defaultCall = { pkgs, path }: pkgs.callPackage path {};
 				callImpl = attrs.call or defaultCall;
@@ -33,15 +33,15 @@ let
 					drv = callImpl args;
 					version = attrs.version or (fetchArgs.ref or null);
 				};
-				drv = callWith { pkgs = _nixpkgs; path = importPath; };
+				drv = callWith { pkgs = _nixpkgs; path = nix; };
 				overlay = (self: super:
 					let
-						impl = callWith { pkgs = self; path = importPath; };
+						impl = callWith { pkgs = self; path = nix; };
 						addition = implAttrset node impl;
 					in
 					recursiveUpdateUntil (path: l: r: isDerivation l) super addition
 				);
-				node = { inherit name attrs src importPath overlay drv; };
+				node = { inherit name attrs src nix overlay drv; };
 			in
 			node
 		;
@@ -120,7 +120,7 @@ let
 					# if not specified use the "nixpkgs" entry,
 					# falling back to the version of nixpkgs used at import time
 					if (nodes ? nixpkgs)
-						then builtins.trace "Using nixpkgs: ${nodes.nixpkgs.importPath}" nodes.nixpkgs.importPath
+						then builtins.trace "Using nixpkgs: ${nodes.nixpkgs.nix}" nodes.nixpkgs.nix
 						else _nixpkgs.path
 				);
 		in

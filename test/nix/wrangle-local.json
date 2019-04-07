@@ -10,7 +10,7 @@
 			]
 		, "unpack": true
 		, "version": "HEAD"
-		, "importPath": "nix/gup-python.nix"
+		, "nix": "nix/gup-python.nix"
 		}
 	, "nix-source-automation":
 		{ "source":
@@ -22,7 +22,7 @@
 			]
 		, "unpack": true
 		, "version": "HEAD"
-		, "importPath": "nix/"
+		, "nix": "nix/"
 		}
 	}
 }

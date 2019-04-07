@@ -112,7 +112,7 @@ def main():
 #     # type derived from src[0], repo + owner derived from src[1]
 #     ref: "master";
 #     version: ...,
-#     importPath: "nix/default.nix",
+#     nix: "nix/default.nix",
 #     TODO: local? put it in nwr-local.json
 #     overlayAttrs: [ "gup" ], # implied
 #   },
@@ -124,7 +124,7 @@ def main():
 #     version: "1.2.3";
 #     url: "http://exmple.com/sw/v{version}/archive.tgz";
 #
-#     importPath: "nix/default.nix",
+#     nix: "nix/default.nix",
 #     TODO: local? put it in nwr-local.json
 #     overlayAttrs: [ "gup" ], # implied
 #   }
