@@ -1,7 +1,7 @@
 with import <nixpkgs> {};
 with builtins;
 with lib;
-with (callPackage ../nix/api.nix {}).wrangle;
+with (callPackage ../nix/api.nix {});
 with internals;
 let
 	eq = msg: a: b: [
@@ -71,12 +71,12 @@ let
 				{} # super
 			).pythonPackages.versionOverride)]
 
-		(eq "uses nixpkgs entry" (pkgs { paths = [ fakeNixpkgs ]; }) "fake nixpkgs!")
+		(eq "uses nixpkgs entry" (pkgs { sources = [ fakeNixpkgs ]; }) "fake nixpkgs!")
 
-		["makes derivations" (isDerivation (derivations { paths = [ version ]; }).version)]
+		["makes derivations" (isDerivation (derivations { sources = [ version ]; }).version)]
 
 		(eq "allows overriding of callPackage" "injected" (derivations {
-			paths = [ version ];
+			sources = [ version ];
 			extend = nodes: {
 				version = {
 					call = { pkgs, path }: ((pkgs.callPackage path {}).overrideAttrs (o: {

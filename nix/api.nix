@@ -79,18 +79,18 @@ let
 			assert attrs.wrangle.apiversion == 1; attrs.sources;
 
 		importFrom = {
-			basePath ? null,
-			paths ? null,
+			path ? null,
+			sources ? null,
 			extend ? null,
 		}:
 		let
 			jsonList = map importJsonSrc (
-				if paths != null then paths else (
-					if basePath == null
-						then (abort "basePath or paths required")
+				if sources != null then sources else (
+					if path == null
+						then (abort "path or sources required")
 						else (
 							let
-								p = builtins.toString basePath;
+								p = builtins.toString path;
 								candidates = [
 									"${p}/wrangle.json"
 									"${p}/wrangle-local.json"
@@ -114,15 +114,15 @@ let
 			map (node: node.overlay) (attrValues nodes);
 
 		pkgs = {
-			basePath ? null,
-			paths ? null,
+			path ? null,
+			sources ? null,
 			nixpkgs ? null,
 			overlays ? [],
 			extend ? null,
 		}:
 		# TODO: any special treatment for wrangle itself?
 		let
-			nodes = importFrom { inherit basePath paths extend; };
+			nodes = importFrom { inherit path sources extend; };
 			nixpkgsPath =
 				if nixpkgs != null then nixpkgs else (
 					# if not specified use the "nixpkgs" entry,
