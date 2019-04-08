@@ -2,7 +2,7 @@
 with lib;
 let
 	_nixpkgs = pkgs;
-	utils = {
+	utils = rec {
 		# sub-tools implemented in their own nix files
 		nixImpure = pkgs.callPackage ./nixImpure.nix {};
 		importDrv = pkgs.callPackage ./importDrv.nix {};
