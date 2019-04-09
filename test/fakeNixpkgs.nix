@@ -1,2 +1,4 @@
 { overlays }:
-"fake nixpkgs!"
+{
+	testMessage = "fake nixpkgs!";
+}

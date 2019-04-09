@@ -4,17 +4,15 @@ let
 	_nixpkgs = pkgs;
 	utils = rec {
 		# sub-tools implemented in their own nix files
-		nixImpure = pkgs.callPackage ./nixImpure.nix {};
-		importDrv = pkgs.callPackage ./importDrv.nix {};
-		exportLocalGit = pkgs.callPackage ./exportLocalGit.nix { inherit nixImpure; };
-		overrideSrc = pkgs.callPackage ./overrideSrc.nix { inherit importDrv; };
-		unpackArchive = pkgs.callPackage ./unpackArchive.nix {};
+		nixImpure = _nixpkgs.callPackage ./nixImpure.nix {};
+		importDrv = _nixpkgs.callPackage ./importDrv.nix {};
+		exportLocalGit = _nixpkgs.callPackage ./exportLocalGit.nix { inherit nixImpure; };
+		overrideSrc = _nixpkgs.callPackage ./overrideSrc.nix { inherit importDrv; };
+		unpackArchive = _nixpkgs.callPackage ./unpackArchive.nix {};
 	};
 
 	# exposed for testing
-	internals = with api; rec {
-		overlaysOfJson = json: overlaysOfNodes (nodesOfJson json);
-
+	internal = with api; rec {
 		implAttrset = node: impl:
 		let
 			paths = map (splitString ".") (node.attrs.attrPaths or [node.name]);
@@ -22,7 +20,7 @@ let
 		in
 		foldr recursiveUpdate {} attrs;
 
-		makeNode = name: attrs:
+		makeImport = name: attrs:
 			let
 				fetcher = elemAt attrs.source 0;
 				fetchArgs = elemAt attrs.source 1;
@@ -49,19 +47,16 @@ let
 					in
 					recursiveUpdateUntil (path: l: r: isDerivation l) super addition
 				);
-				node = { inherit name attrs src nix overlay drv; };
+				node = { inherit name attrs src version nix overlay drv; };
 			in
 			node
 		;
 
-		nodesOfJson = mapAttrs makeNode;
-
-		nodesOfJsonList = jsons:
-			lib.foldr (a: b: a // b) {} (map nodesOfJson jsons);
+		importsOfJson = json: mapAttrs makeImport json;
 	};
 
-	api = with internals; with utils; utils // (rec {
-		inherit internals;
+	api = with internal; with utils; utils // (rec {
+		inherit internal;
 
 		fetchers = {
 			github = fetchFromGitHub;
@@ -76,7 +71,7 @@ let
 				then path
 				else builtins.trace "Importing ${path}" (importJSON path);
 			in
-			assert attrs.wrangle.apiversion == 1; attrs.sources;
+			assert attrs.wrangle.apiversion == 1; attrs;
 
 		importFrom = {
 			path ? null,
@@ -103,24 +98,30 @@ let
 						)
 				)
 			);
-			jsonSources = lib.foldr (a: b: a // b) {} jsonList;
+			jsonSources = lib.foldr recursiveUpdate { sources = {}; } jsonList;
 			jsonExtended = if extend == null then jsonSources else (
-				recursiveUpdate jsonSources (extend jsonSources)
+				# extend only acts on `sources`, not the full attrset
+				recursiveUpdate jsonSources ({ sources = extend jsonSources.sources; })
 			);
+			result = jsonExtended // {
+				sources = importsOfJson jsonExtended.sources;
+			};
 		in
-		# TODO: merge `sources` but keep toplevel self / pkgs?
-		nodesOfJson jsonExtended;
+		# map `sources` into imports instead of plain attrs
+		jsonExtended // {
+			sources = importsOfJson jsonExtended.sources;
+		};
 
-		overlaysOfNodes = nodes:
-			map (node: node.overlay) (attrValues nodes);
+		overlaysOfImport = imports:
+			map (node: node.overlay) (attrValues imports.sources);
 
-		pkgsOfNodes = nodes: {
+		pkgsOfImport = imports: {
 			overlays ? [],
 			extend ? null,
 			importArgs ? {},
 		}:
 		import _nixpkgs.path ({
-			overlays = overlays ++ (overlaysOfNodes nodes);
+			overlays = overlays ++ (overlaysOfImport imports);
 		} // importArgs);
 
 		pkgs = {
@@ -131,41 +132,48 @@ let
 			extend ? null,
 			importArgs ? {},
 		}:
-		pkgsOfNodes (importFrom { inherit path sources extend; }) {
+		pkgsOfImport (importFrom { inherit path sources extend; }) {
 			inherit overlays extend importArgs;
-		}
+		};
 
-		overlays = args: overlaysOfNodes (importFrom args);
+		overlays = args: overlaysOfImport (importFrom args);
 
-		derivations = args: mapAttrs (name: node: node.drv) (importFrom args);
+		derivations = args: mapAttrs (name: node: node.drv) (importFrom args).sources;
 
 		callPackage = arg:
 			let
+				isPath = p: builtins.typeOf p == "path";
 				argValue = if isPath arg then import arg else arg;
 				attrs = if isFunction argValue
-					then assert isPath arg; { drv = argValue; nix = argValue; path = arg; }
+					then assert isPath arg; { nix = argValue; path = arg; }
 					else argValue;
 			in ({
+				# callPackage args
+				nix,
+				args ? {},
+
+				# importFrom args
 				path ? null,
 				sources ? null,
 
-				nix ? path,
-
+				# pkgsOfImport args
 				overlays ? [],
 				extend ? null,
 				importArgs ? {},
-			} callArgs:
+			}:
 				let
-					nodes = importFrom { inherit path source extend; };
-					pkgs = pkgsOfNodes nodes {inherit overlay extend importArgs; };
-					base = pkgs.callPackage nix callArgs;
-					overridden = if nodes ? self then
+					imports = importFrom { inherit path sources extend; };
+					pkgs = pkgsOfImport imports {inherit overlays extend importArgs; };
+					base = pkgs.callPackage nix args;
+					overridden = if imports ? self then
+						let self = makeImport null imports.self; in
 						overrideSrc {
-							inherit (nodes.self) src version;
+							inherit (self) src version;
 							drv = base;
 						} else base;
 				in
 				overridden
-			) attrs
+			) attrs;
+
 	});
 in api

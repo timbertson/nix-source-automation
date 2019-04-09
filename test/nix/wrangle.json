@@ -1,20 +1,18 @@
 { "wrangle": { "apiversion": 1 }
 , "pkgs":
-	{ "nixpkgs":
-		{ "source":
-			[ "url"
-			, { "url": "fff"
-				, "sha256": "aaa"
-				}
-			]
-		}
-	, "self":
-		{ "source":
-			[ "fetchGitLocal"
-				# relative to `path` as passed into wrangle API
-			, { "relativePath": "../" }
-
+	{ "source":
+		[ "url"
+		, { "url": "fff"
+			, "sha256": "aaa"
+			}
+		]
 	}
+, "self":
+	{ "source":
+		[ "fetchGitLocal"
+			# relative to `path` as passed into wrangle API
+		, { "relativePath": "../" }
+
 , "sources":
 	{ "opam2nix-packages":
 		{ "source":
