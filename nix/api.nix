@@ -13,6 +13,31 @@ let
 
 	# exposed for testing
 	internal = with api; rec {
+		makeFetchers = { path }: {
+			github = fetchFromGitHub;
+			url = fetchurl;
+			git = fetchgit;
+			git-local = args:
+			let
+				# inject support for `relativePath` as long as
+				# we were invoked with a base path
+				fullPath = relativePath: (
+					if path == null
+						then abort "Cannot use relativePath without specifying path"
+						else "${settings.path}/${relativePath}"
+				);
+
+				finalArgs = if args ? relativePath
+					then { path = fullPath args.relativePath; } //
+						(filterAttrs (n: v: n != "relativePath") args)
+					else args;
+				in
+				exportLocalGit finalArgs;
+
+			path = ({ path }: path);
+		};
+
+
 		implAttrset = node: impl:
 		let
 			paths = map (splitString ".") (node.attrs.attrPaths or [node.name]);
@@ -20,8 +45,9 @@ let
 		in
 		foldr recursiveUpdate {} attrs;
 
-		makeImport = name: attrs:
+		makeImport = settings: name: attrs:
 			let
+				fetchers = makeFetchers settings;
 				fetcher = elemAt attrs.source 0;
 				fetchArgs = elemAt attrs.source 1;
 				fetched = if builtins.hasAttr fetcher fetchers
@@ -52,19 +78,12 @@ let
 			node
 		;
 
-		importsOfJson = json: mapAttrs makeImport json;
+		importsOfJson = settings: json: mapAttrs
+			(makeImport { path = json.path or null; }) json;
 	};
 
 	api = with internal; with utils; utils // (rec {
 		inherit internal;
-
-		fetchers = {
-			github = fetchFromGitHub;
-			url = fetchurl;
-			git = fetchgit;
-			git-local = exportLocalGit;
-			path = ({ path }: path);
-		};
 
 		importJsonSrc = path:
 			let attrs = if isAttrs path
@@ -103,13 +122,10 @@ let
 				# extend only acts on `sources`, not the full attrset
 				recursiveUpdate jsonSources ({ sources = extend jsonSources.sources; })
 			);
-			result = jsonExtended // {
-				sources = importsOfJson jsonExtended.sources;
-			};
 		in
 		# map `sources` into imports instead of plain attrs
 		jsonExtended // {
-			sources = importsOfJson jsonExtended.sources;
+			sources = importsOfJson { inherit path; } jsonExtended.sources;
 		};
 
 		overlaysOfImport = imports:
@@ -166,7 +182,7 @@ let
 					pkgs = pkgsOfImport imports {inherit overlays extend importArgs; };
 					base = pkgs.callPackage nix args;
 					overridden = if imports ? self then
-						let self = makeImport null imports.self; in
+						let self = makeImport { inherit path; } null imports.self; in
 						overrideSrc {
 							inherit (self) src version;
 							drv = base;

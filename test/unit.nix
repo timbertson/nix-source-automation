@@ -35,6 +35,8 @@ let
 		};
 	};
 
+	makeImport = internal.makeImport { path = null; };
+
 	checks = [
 		(eq "implAttrset with no explicit path"
 			(internal.implAttrset { attrs = {}; name = "foo"; } 1)
@@ -44,20 +46,20 @@ let
 			(internal.implAttrset { attrs = { attrPaths = ["foo" "bar.baz"]; }; } 1)
 			{ foo = 1; bar = { baz = 1; }; })
 
-		["implPath is path" (isString (internal.makeImport "name" versionSrc).nix)]
+		["implPath is path" (isString (makeImport "name" versionSrc).nix)]
 
-		["nix defaults to default.nix" (hasSuffix "/default.nix" (internal.makeImport "name" versionNoImport).nix)]
+		["nix defaults to default.nix" (hasSuffix "/default.nix" (makeImport "name" versionNoImport).nix)]
 
-		["nix is modifiable" (hasSuffix "/foo.nix" (internal.makeImport "name" (versionSrc // {nix = "foo.nix";})).nix)]
+		["nix is modifiable" (hasSuffix "/foo.nix" (makeImport "name" (versionSrc // {nix = "foo.nix";})).nix)]
 
-		["src is derivation" (isDerivation (internal.makeImport "name" versionSrc).src)]
+		["src is derivation" (isDerivation (makeImport "name" versionSrc).src)]
 
-		(eq "passthru name" (internal.makeImport "name" versionSrc).name "name")
+		(eq "passthru name" (makeImport "name" versionSrc).name "name")
 
-		(eq "passthru attrs" (internal.makeImport "name" versionSrc).attrs versionSrc)
+		(eq "passthru attrs" (makeImport "name" versionSrc).attrs versionSrc)
 
 		["overlay is valid"
-			(isDerivation ((internal.makeImport "pythonPackages.versionOverride" versionSrc).overlay
+			(isDerivation ((makeImport "pythonPackages.versionOverride" versionSrc).overlay
 				{inherit callPackage;} # self
 				{} # super
 			).pythonPackages.versionOverride)]
