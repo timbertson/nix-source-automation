@@ -66,6 +66,24 @@ let
 
 		["makes derivations" (isDerivation (api.derivations { sources = [ version ]; }).version)]
 
+		(eq "overlay merges up to attr path"
+			(
+				let result = ((makeImport "a.b.c.version" versionSrc).overlay
+					{inherit callPackage;} # self
+					{ # super
+						a.b.c = {
+							d = lib.const 1;
+							version = {
+								e = "super";
+								src = lib.warn "evaluating `const 1`" (const 1);
+							};
+						};
+					}
+				); in
+			(attrNames result.a.b.c) ++ ([result.a.b.c.version.src.drvPath]))
+			["d" "version" ((makeImport "name" versionSrc).src.drvPath)]
+		)
+
 		(eq "allows overriding of individual package invocations" "injected" (api.derivations {
 			sources = [ version ];
 			extend = nodes: {

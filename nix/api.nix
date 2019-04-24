@@ -37,10 +37,11 @@ let
 			path = ({ path }: path);
 		};
 
+		implAttrPaths = node: map (splitString ".") (node.attrs.attrPaths or [node.name]);
 
 		implAttrset = node: impl:
 		let
-			paths = map (splitString ".") (node.attrs.attrPaths or [node.name]);
+			paths = implAttrPaths node;
 			attrs = map (path: setAttrByPath path impl) paths;
 		in
 		foldr recursiveUpdate {} attrs;
@@ -70,8 +71,9 @@ let
 					let
 						impl = callWith { pkgs = self; path = nix; };
 						addition = implAttrset node impl;
+						paths = implAttrPaths node;
 					in
-					recursiveUpdateUntil (path: l: r: isDerivation l) super addition
+					recursiveUpdateUntil (path: l: r: elem path paths) super addition
 				);
 				node = { inherit name attrs src version nix overlay drv; };
 			in
