@@ -95,23 +95,23 @@ let
 			};
 		}).version.extra)
 
-		(eq "callpackage works with just a path" ./samplePackage/upstream-src
-			(api.callPackage ./samplePackage).src)
+		(eq "inject works with just a path" ./samplePackage/upstream-src
+			(api.inject ./samplePackage).src)
 
-		(eq "callpackage works with a path which is an attrset of args" "attr!"
-			(api.callPackage ./samplePackage/attrs.nix).custom)
+		(eq "inject works with a path which is an attrset of args" "attr!"
+			(api.inject ./samplePackage/attrs.nix).custom)
 
-		(eq "callpackage works with an attrset and no `self`" ./samplePackage/upstream-src (
-			api.callPackage {
+		(eq "inject works with an attrset and no `self`" ./samplePackage/upstream-src (
+			api.inject {
 				sources = [ version ];
 				nix = ({ pkgs, version }: pkgs.callPackage ./samplePackage/default.nix {});
 			}
 		).src)
 
-		(eq "callpackage overrides src if `self` is given" ./samplePackage/local-src (
-			api.callPackage {
+		(eq "inject overrides src if `self` is given" ./samplePackage/local-src (
+			api.inject {
 				sources = [ version (addHeader {
-					self = { source = [ "path" { path = ./samplePackage/local-src; } ]; };
+					sources.self = { source = [ "path" { path = ./samplePackage/local-src; } ]; };
 				})];
 				nix = ({ pkgs, version }: pkgs.callPackage ./samplePackage/default.nix {});
 			}

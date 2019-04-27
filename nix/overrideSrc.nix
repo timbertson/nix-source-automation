@@ -7,4 +7,4 @@ let
 in
 	if lib.isDerivation drvAttrs
 		then override drvAttrs (_: overrides)
-		else lib.warn "overrideSrc: ${builtins.typeOf drv} is not a derivation, not overriding" drv
+		else lib.warn "overrideSrc: ${builtins.typeOf drv} is not a derivation, ignoring src ${builtins.toString src}" drv
