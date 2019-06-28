@@ -14,6 +14,7 @@ let
 	# exposed for testing
 	internal = with api; rec {
 		makeFetchers = { path }: {
+			# TODO harmonize with impl
 			github = fetchFromGitHub;
 			url = fetchurl;
 			git = fetchgit;
@@ -49,8 +50,8 @@ let
 		makeImport = settings: name: attrs:
 			let
 				fetchers = makeFetchers settings;
-				fetcher = elemAt attrs.source 0;
-				fetchArgs = elemAt attrs.source 1;
+				fetcher = elemAt attrs.spec 0;
+				fetchArgs = attrs.fetch;
 				fetched = if builtins.hasAttr fetcher fetchers
 					then (builtins.getAttr fetcher fetchers) fetchArgs
 					else abort "Unknown fetcher: ${fetcher}"

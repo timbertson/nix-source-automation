@@ -1,7 +1,7 @@
 { "wrangle": { "apiversion": 1 }
 , "sources":
 	{ "gup":
-		{ "source":
+		{ "fetch":
 			[ "git-local"
 			, { "path": "/home/tim/dev/ocaml/gup"
 				, "unpack": false
@@ -13,7 +13,7 @@
 		, "nix": "nix/gup-python.nix"
 		}
 	, "nix-source-automation":
-		{ "source":
+		{ "fetch":
 			[ "git-local"
 			, { "path": "/home/tim/dev/nix/nix-source-automation"
 				, "unpack": false

@@ -1,7 +1,7 @@
 { "wrangle": { "apiversion": 1 }
 , "sources":
 	{ "nixpkgs":
-		{ "source":
+		{ "fetch":
 			[ "path"
 			, { "path": "opam2nix-packages"
 				, "owner": "timbertson"

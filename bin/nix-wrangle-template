@@ -46,7 +46,7 @@ defaultPkgs = %(nixpkgs)s;
 defaultWrangle = pkgs: { api = pkgs.callPackage "${%(wrangle)s}/nix/api.nix"; };
 in
 { pkgs ? defaultPkgs, nix-wrangle ? defaultWrangle pkgs }:
-(nix-wrangle.api { inherit pkgs; }).callPackage ./nix
+(nix-wrangle.api { inherit pkgs; }).inject ./nix
 ''' % { 'nixpkgs': nixpkgs, 'wrangle': wrangle }
 print(contents)
 with open('default.nix', 'w') as f:

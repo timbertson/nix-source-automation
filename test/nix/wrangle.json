@@ -1,7 +1,7 @@
 { "wrangle": { "apiversion": 1 }
 , "inject":
 	{ "wrangle":
-		{ "source":
+		{ "fetch":
 			[ "github",
 				{ "owner": "timbertson"
 				, "repo": "nix-source-automation"
@@ -12,14 +12,14 @@
 		}
 	}
 , "self":
-	{ "source":
+	{ "fetch":
 		[ "fetchGitLocal"
 			# relative to `path` as passed into wrangle API
 		, { "relativePath": "../" }
 
 , "sources":
 	{ "opam2nix-packages":
-		{ "source":
+		{ "fetch":
 			[ "github"
 			, { "repo": "opam2nix-packages"
 				, "owner": "timbertson"
